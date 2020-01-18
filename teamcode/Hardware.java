@@ -20,10 +20,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import static org.firstinspires.ftc.teamcode.MathFunctions.AngleWrap;
+import static org.firstinspires.ftc.teamcode.MathFunctions.between;
 import static org.firstinspires.ftc.teamcode.MathFunctions.calculateAngle;
 import static org.firstinspires.ftc.teamcode.MathFunctions.moveX;
 import static org.firstinspires.ftc.teamcode.MathFunctions.moveY;
-//import org.opencv.core.Mat;
+import org.opencv.core.Mat;
 
 public class Hardware {
     private Point position = new Point(0,0);
@@ -59,10 +60,11 @@ public class Hardware {
     public static double backClosePos =0.2;
     public static double  backOpenPos = 0.8;
 
-    Point previousPosition = new Point();
+    Point previousEncoderPosition = new Point();
     Point move = new Point();
     Point robotPosition = new Point();
-    Point currentPosition = new Point();
+    Point currentEncoderPosition = new Point();
+    Point initEncoderPosition;
 
     private double s4tPPR = 3200;
     private double s4tGear = 3;
@@ -186,6 +188,8 @@ public class Hardware {
         driveRightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         driveLeftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         driveLeftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        initEncoderPosition = new Point(0, 0);
     }
 
 
@@ -293,11 +297,11 @@ public class Hardware {
 
         double finalAngle;
 
-        currentPosition.x = getXEncoder();
-        currentPosition.y = getYEncoder();
+        currentEncoderPosition.x = getXEncoder();
+        currentEncoderPosition.y = getYEncoder();
 
-        move.x = previousPosition.x - currentPosition.x;
-        move.y = previousPosition.y - currentPosition.y;
+        move.x = previousEncoderPosition.x - currentEncoderPosition.x;
+        move.y = previousEncoderPosition.y - currentEncoderPosition.y;
 
         finalAngle = Math.toDegrees(Math.toRadians(gyro) + calculateAngle(move.y, move.x)) - 90;
         finalAngle = AngleWrap(finalAngle);
@@ -309,13 +313,14 @@ public class Hardware {
         move.x = moveX(hypotenuse, finalAngle);
         move.y = moveY(hypotenuse, finalAngle);
 
-        move.y *= -1;
+        robotPosition.x += (move.x + initEncoderPosition.x);
+        robotPosition.y += (move.y + initEncoderPosition.y);
 
-        robotPosition.x += move.x;
-        robotPosition.y += move.y;
+        robotPosition.x = between(robotPosition.x, 0, 144);
+        robotPosition.y = between(robotPosition.y, 0, 144);
 
-        previousPosition.x = currentPosition.x;
-        previousPosition.y = currentPosition.y;
+        previousEncoderPosition.x = currentEncoderPosition.x;
+        previousEncoderPosition.y = currentEncoderPosition.y;
     }
  }
 
