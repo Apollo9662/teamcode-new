@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class MathFunctions {
+    public static double hypotenuseX;
+    public static double hypotenuseY;
+
     final static double EPSILON = 1e-12;
     /**
      *
@@ -144,5 +147,43 @@ public class MathFunctions {
         }else {
             return false;
         }
+    }
+
+    public static double calculateAngle(double opposite, double adjacent){
+        double radians = Math.atan(opposite/adjacent);
+        if (adjacent < 0){
+            return radians;
+        }else {
+            return Math.toRadians(Math.toDegrees(radians) + 180);
+        }
+    }
+
+    public static double moveX(double hypotenuse, double angle) {
+        double advanceX;
+        if (hypotenuse == 0) {
+            hypotenuseX = 0;
+            advanceX = 0;
+        } else {
+            hypotenuseX += hypotenuse * Math.cos(angle);
+
+            advanceX = hypotenuseX;
+
+            hypotenuseX = hypotenuseX - advanceX;
+        }
+        return advanceX;
+    }
+    public static double moveY(double hypotenuse, double angle) {
+        double advanceY;
+        if (hypotenuse == 0) {
+            hypotenuseY = 0;
+            advanceY = 0;
+        } else {
+            hypotenuseY += hypotenuse * Math.sin(angle);
+
+            advanceY = hypotenuseY;
+
+            hypotenuseY = hypotenuseY - advanceY;
+        }
+        return advanceY;
     }
 }

@@ -18,7 +18,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.opencv.core.Mat;
+
+import static org.firstinspires.ftc.teamcode.MathFunctions.AngleWrap;
+import static org.firstinspires.ftc.teamcode.MathFunctions.calculateAngle;
+import static org.firstinspires.ftc.teamcode.MathFunctions.moveX;
+import static org.firstinspires.ftc.teamcode.MathFunctions.moveY;
+//import org.opencv.core.Mat;
 
 public class Hardware {
     private Point position = new Point(0,0);
@@ -53,7 +58,11 @@ public class Hardware {
 
     public static double backClosePos =0.2;
     public static double  backOpenPos = 0.8;
-    private Point prevPoint;
+
+    Point previousPosition = new Point();
+    Point move = new Point();
+    Point robotPosition = new Point();
+    Point currentPosition = new Point();
 
     private double s4tPPR = 3200;
     private double s4tGear = 3;
@@ -177,8 +186,6 @@ public class Hardware {
         driveRightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         driveLeftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         driveLeftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        prevPoint = new Point(getXencoder(),getYencoder());
     }
 
 
@@ -275,31 +282,40 @@ public class Hardware {
 
 
     }
-    private double getXencoder(){
-        return leftCollector.getCurrentPosition();
+    private double getXEncoder(){
+        return leftCollector.getCurrentPosition() * s4tToIn;
     }
-    private double getYencoder(){
-        return rightCollector.getCurrentPosition();
+    private double getYEncoder(){
+        return rightCollector.getCurrentPosition() * s4tToIn;
     }
 
-    public  void updatePosition(){
-        Point correntPoint = new Point(getXencoder(),getYencoder());
-        Point moved = new Point(correntPoint.x - prevPoint.x,correntPoint.y - prevPoint.y);
-        moved.x *= s4tToIn;
-        moved.y *= s4tToIn;
+    public void updatePosition(double gyro){
 
-        //x =10 y = 0 hypo = 10
-        //x =0 y = 10 hypo = 10
+        double finalAngle;
 
-        double hypo = Math.hypot(moved.x,moved.y);
+        currentPosition.x = getXEncoder();
+        currentPosition.y = getYEncoder();
 
-        moved.x = hypo * Math.cos(GetGyroAngle() + Math.atan2(moved.y,moved.x));
-        moved.y = hypo * Math.sin(GetGyroAngle() + Math.atan2(moved.y,moved.x));
+        move.x = previousPosition.x - currentPosition.x;
+        move.y = previousPosition.y - currentPosition.y;
 
-        position.x += moved.x;
-        position.y += moved.y;
-        
-        prevPoint = correntPoint;
+        finalAngle = Math.toDegrees(Math.toRadians(gyro) + calculateAngle(move.y, move.x)) - 90;
+        finalAngle = AngleWrap(finalAngle);
+
+        finalAngle = Math.toRadians(finalAngle);
+
+        double hypotenuse = Math.hypot(move.x, move.y);
+
+        move.x = moveX(hypotenuse, finalAngle);
+        move.y = moveY(hypotenuse, finalAngle);
+
+        move.y *= -1;
+
+        robotPosition.x += move.x;
+        robotPosition.y += move.y;
+
+        previousPosition.x = currentPosition.x;
+        previousPosition.y = currentPosition.y;
     }
  }
 
