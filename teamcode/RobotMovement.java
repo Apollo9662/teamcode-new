@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -23,7 +24,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static org.firstinspires.ftc.teamcode.MathFunctions.dist2D;
 import static org.firstinspires.ftc.teamcode.MathFunctions.getCircleLineIntersectionPoint;
-
+@Disabled
 public class RobotMovement extends LinearOpMode {
     Hardware robot = new Hardware();
     CurvePoint followMe;
@@ -51,12 +52,12 @@ public class RobotMovement extends LinearOpMode {
             telemetry.addData("i", i);
             CurvePoint startLine = pathPoints.get(i);//            CurvePoint startLine = pathPoints.get(i);
             CurvePoint endLine = pathPoints.get(i+1);//             CurvePoint endLine = pathPoints.get(i + 1);
-            List<Point> intersections = getCircleLineIntersectionPoint(robot.point(), followRadius, startLine.toPoint(), endLine.toPoint());
+            List<Point> intersections = getCircleLineIntersectionPoint(robot.robotPosition, followRadius, startLine.toPoint(), endLine.toPoint());
             //telemetry.addData("intersections.size()",intersections.size());
             double smallestAngle = 10000000;
 
             for (Point thisIntersection : intersections) {
-                double pointAngle = atan2(abs(thisIntersection.y - robot.point().y),abs(thisIntersection.x - robot.point().x));
+                double pointAngle = atan2(abs(thisIntersection.y - robot.robotPosition.y),abs(thisIntersection.x - robot.robotPosition.x));
                 double deltaAngle = abs(robot.GetGyroAngle() - Math.toDegrees(pointAngle));
 
                 if (deltaAngle < smallestAngle) {
@@ -97,8 +98,8 @@ public class RobotMovement extends LinearOpMode {
         steer = getSteer(error,0.15);
         steer = MathFunctions.map(steer,-1,1,-turnSpeed,turnSpeed);
 
-        angle = angle + robot.GetGyroAngle() + 45;
-        angle = MathFunctions.AngleWrap(Math.toRadians(angle));
+        angle = robot.GetGyroAngle() + 45;
+        angle = MathFunctions.AngleWrap(Math.toRadians(angle) + Math.atan2(p.y,p.x));
         x = speed * Math.cos(angle);
         y = speed * Math.sin(angle);
         robot.driveRightFront.setPower(y - steer);

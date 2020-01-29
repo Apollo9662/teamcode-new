@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -21,6 +23,7 @@ import java.util.List;
 *
 * @author GRIP
 */
+@Disabled
 public class GripGoldMineral {
 
 	//Outputs

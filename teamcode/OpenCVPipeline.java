@@ -9,6 +9,8 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.android.BaseLoaderCallback;
@@ -18,7 +20,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.android.JavaCameraView;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-
+@Disabled
 public abstract class OpenCVPipeline implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     private final String TAG = "OpenCv Pipeline";

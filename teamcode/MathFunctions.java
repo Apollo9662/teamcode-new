@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
+@Disabled
 public class MathFunctions {
     public static double hypotenuseX;
     public static double hypotenuseY;

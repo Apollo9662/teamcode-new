@@ -2,10 +2,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import android.app.Activity;
+import android.util.Pair;
 import android.view.View;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -24,8 +26,7 @@ import static org.firstinspires.ftc.teamcode.MathFunctions.between;
 import static org.firstinspires.ftc.teamcode.MathFunctions.calculateAngle;
 import static org.firstinspires.ftc.teamcode.MathFunctions.moveX;
 import static org.firstinspires.ftc.teamcode.MathFunctions.moveY;
-import org.opencv.core.Mat;
-
+@Disabled
 public class Hardware {
     private Point position = new Point(0,0);
 
@@ -58,7 +59,13 @@ public class Hardware {
     public static double frontOpenPos = 0.07;
 
     public static double backClosePos =0.2;
-    public static double  backOpenPos = 0.8;
+    public static double  backOpenPos = 0.9;
+
+    private static final double countsPer20gearmotor = 1120;
+    static final double DRIVE_GEAR_REDUCTION = 2.4;
+    private static final double COUNTS_PER_INCH_FOR_VERTICAL_SLIDE = (countsPer20gearmotor / DRIVE_GEAR_REDUCTION) / (Math.PI);
+    private int[] levels = {0,6,10,15,18,23};
+    boolean verticalMotorOnTarget = true;
 
     Point previousEncoderPosition = new Point();
     Point move = new Point();
@@ -253,11 +260,11 @@ public class Hardware {
 
     void setCatchers(double position){
         if(position == 1){
-            rightCatcher.setPosition(0.45);
-            leftCatcher.setPosition(0);
+            rightCatcher.setPosition(0.7);
+            leftCatcher.setPosition(0.7);
         }else{
             rightCatcher.setPosition(0);
-            leftCatcher.setPosition(0.55);
+            leftCatcher.setPosition(0);
         }
 
     }
@@ -287,40 +294,52 @@ public class Hardware {
 
     }
     private double getXEncoder(){
-        return leftCollector.getCurrentPosition() * s4tToIn;
+        return leftCollector.getCurrentPosition() / s4tToIn;
     }
     private double getYEncoder(){
-        return rightCollector.getCurrentPosition() * s4tToIn;
+        return rightCollector.getCurrentPosition() / s4tToIn;
     }
 
-    public void updatePosition(double gyro){
+    public void updatePosition(){
+        currentEncoderPosition = new Point(getX(), getY());
 
-        double finalAngle;
+        move = new Point(currentEncoderPosition.x - previousEncoderPosition.x, currentEncoderPosition.y  - previousEncoderPosition.y);
 
-        currentEncoderPosition.x = getXEncoder();
-        currentEncoderPosition.y = getYEncoder();
+        double finalAngle = Math.toDegrees(Math.toRadians(GetGyroAngle()) + calculateAngle(move.y, move.x)) - 90;
+        finalAngle = AngleWrap(Math.toRadians(finalAngle));
 
-        move.x = previousEncoderPosition.x - currentEncoderPosition.x;
-        move.y = previousEncoderPosition.y - currentEncoderPosition.y;
-
-        finalAngle = Math.toDegrees(Math.toRadians(gyro) + calculateAngle(move.y, move.x)) - 90;
-        finalAngle = AngleWrap(finalAngle);
-
-        finalAngle = Math.toRadians(finalAngle);
 
         double hypotenuse = Math.hypot(move.x, move.y);
 
         move.x = moveX(hypotenuse, finalAngle);
         move.y = moveY(hypotenuse, finalAngle);
 
-        robotPosition.x += (move.x + initEncoderPosition.x);
-        robotPosition.y += (move.y + initEncoderPosition.y);
+        robotPosition.x = (move.x + initEncoderPosition.x);
+        robotPosition.y = (move.y + initEncoderPosition.y);
 
         robotPosition.x = between(robotPosition.x, 0, 144);
         robotPosition.y = between(robotPosition.y, 0, 144);
 
         previousEncoderPosition.x = currentEncoderPosition.x;
         previousEncoderPosition.y = currentEncoderPosition.y;
+
+    }
+
+    public void AutoVerticalSlide(int level, boolean setTarget){
+        if (setTarget) {
+            verticalMotorOnTarget = false;
+            verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            verticalElevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            verticalElevator.setTargetPosition((int) COUNTS_PER_INCH_FOR_VERTICAL_SLIDE * levels[level]);
+            verticalElevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        if (verticalElevator.isBusy() && !verticalMotorOnTarget) {
+            verticalElevator.setPower(0.9);
+        } else {
+            verticalMotorOnTarget = true;
+            verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            verticalElevator.setPower(0);
+        }
     }
  }
 

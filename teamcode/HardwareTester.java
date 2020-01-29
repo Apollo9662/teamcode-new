@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 
-
+@Disabled
 public class HardwareTester {
     DcMotor encoder = null;
     private double s4tPPR = 3200;

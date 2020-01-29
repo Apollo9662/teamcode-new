@@ -103,7 +103,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 
 @TeleOp(name="SKYSTONE Vuforia OpenCV", group ="Concept")
-//@Disabled
+@Disabled
 public class ConceptVuforiaSkyStoneNavigation extends LinearOpMode {
 
 

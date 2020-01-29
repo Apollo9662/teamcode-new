@@ -2,20 +2,13 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.HashMap;
 
 import org.opencv.core.*;
-import org.opencv.core.Core.*;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.*;
-import org.opencv.objdetect.*;
 
 /**
 * GripSkyStone class.
@@ -24,6 +17,7 @@ import org.opencv.objdetect.*;
 *
 * @author GRIP
 */
+@Disabled
 public class GripSkyStone {
 
 
@@ -59,7 +53,7 @@ public class GripSkyStone {
 
 		// Step Filter_Contours0:
 		ArrayList<MatOfPoint> filterContoursContours = findContoursOutput;
-		double filterContoursMinArea = 20.0;
+		double filterContoursMinArea = 20;
 		double filterContoursMinPerimeter = 0.0;
 		double filterContoursMinWidth = 0.0;
 		double filterContoursMaxWidth = 1000.0;
@@ -72,7 +66,7 @@ public class GripSkyStone {
 		double filterContoursMaxRatio = 1000.0;
 		filterContours(filterContoursContours, filterContoursMinArea, filterContoursMinPerimeter, filterContoursMinWidth, filterContoursMaxWidth, filterContoursMinHeight, filterContoursMaxHeight, filterContoursSolidity, filterContoursMaxVertices, filterContoursMinVertices, filterContoursMinRatio, filterContoursMaxRatio, filterContoursOutput);
 		findBlobs();
-		ClearBlobs(100);
+//		ClearBlobs(30);
 	}
 
 	/**
@@ -99,13 +93,28 @@ public class GripSkyStone {
 		return findContoursOutput;
 	}
 
-	public ArrayList<org.opencv.core.Point> findContoursArray(){
+	private ArrayList<org.opencv.core.Point> ContoursToArray(){
 		ArrayList<org.opencv.core.Point> r = new ArrayList<>();
 		for (MatOfPoint p : filterContoursOutput){
 			r.addAll(p.toList());
 		}
-
 		return r;
+	}
+	public ArrayList<org.opencv.core.Point> findContoursArray(){
+		ArrayList<org.opencv.core.Point> countours = ContoursToArray();
+		ArrayList<org.opencv.core.Point> newCountours = new ArrayList<>();
+		Log.d("size", String.valueOf(countours.size()));
+		for(int i = 0;i<countours.size();i++){
+			if(countours.get(i).y > 300 && countours.get(i).x > 160 ){
+				Log.d("y", String.valueOf(countours.get(i).y));
+				newCountours.add(countours.get(i));
+			}else{
+				Log.d("by", String.valueOf(countours.get(i).y));
+
+			}
+		}
+			return newCountours;
+
 	}
 	/**
 	 * This method is a generated getter for the output of a Filter_Contours.
@@ -292,6 +301,15 @@ public class GripSkyStone {
 				blobs.add(new Blob(p.x,p.y));
 			}
 		}
+		for(int i = 0; i < blobs.size();i++){
+			for(int j = 0; j < blobs.size();j++) {
+				if (blobs.get(i).verPath.size() > blobs.get(j).verPath.size() && i > j){
+					Blob b = blobs.get(j);
+					blobs.set(j,blobs.get(i));
+					blobs.set(i,b);
+				}
+			}
+		}
 		ArrayList<Point> centers = new ArrayList<>();
 		for(Blob b : blobs){
 			centers.add(b.getCenter());
@@ -308,8 +326,8 @@ public class GripSkyStone {
 	}
 
 	private void crop(Mat input){
-		int deadArea = input.height()/3;
-		Rect roi = new Rect(0, 0, (input.width()/3)*2,input.height() - deadArea);
+		int deadArea = (int)(input.height()/2);
+		Rect roi = new Rect(0, 0, (int)((input.width()/3)*2.5),input.height() - deadArea);
 		croppedMat = new Mat(input, roi);
 	}
 }

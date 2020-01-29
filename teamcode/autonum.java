@@ -4,10 +4,11 @@ package org.firstinspires.ftc.teamcode;
 import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import static org.firstinspires.ftc.teamcode.GyroOperator.DriveMode.*;
 
-
+@Disabled
 @Autonomous(name = "auto1")
 public abstract class autonum extends GyroOperator {
     int counter = 0;

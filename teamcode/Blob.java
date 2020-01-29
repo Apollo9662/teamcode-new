@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 
 import java.util.ArrayList;
@@ -7,7 +9,7 @@ import java.util.ArrayList;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static org.firstinspires.ftc.teamcode.MathFunctions.dist2D;
-
+@Disabled
 class Blob{
     double minx;
     double miny;
@@ -38,7 +40,7 @@ class Blob{
         double cy = (miny + maxy)/2;
 
         double d = dist2D(new Point(cx,cy),new Point(x,y));
-        if(d < 600){
+        if(d < 30){
             return true;
         }
         else{
@@ -47,8 +49,8 @@ class Blob{
     }
 
     public Point getCenter() {
-        double cx = (minx + maxx)/2;
-        double cy = (miny + maxy)/2;
+        double cx = (maxx + minx)/2;
+        double cy = (maxy + miny)/2;
 
         return new Point(cx,cy);
     }

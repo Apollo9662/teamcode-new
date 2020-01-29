@@ -30,9 +30,12 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 /**
  * Utility class for performing range operations
  */
+@Disabled
 public class Range {
 
     /*

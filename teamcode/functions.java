@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-
+@Disabled
 public abstract class functions extends RobotMovement {
     Hardware robot = new Hardware();
     double distanceToTarget;
@@ -30,6 +31,7 @@ public abstract class functions extends RobotMovement {
             encoder = robot.driveRightBack.getCurrentPosition();
         }
     }
+
 }
 
 

@@ -29,8 +29,6 @@
 
         package org.firstinspires.ftc.teamcode;
 
-import android.util.Log;
-
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -68,7 +66,7 @@ public class TeleopNew extends functions {
     private Thread inputOperation = new InputOperation();
     private double collectionSpeed = 1;
     private int[] levels = {0,6,10,15,18,23};
-    double turnInput = 0;
+    boolean verticalMotorOnTarget = true;
     double turnPower = 0;
     double errorKeap;
     private double robotAngle = 0;
@@ -104,7 +102,6 @@ public class TeleopNew extends functions {
         telemetry.update();
 
         waitForStart();
-
         clawOperation.start();
         slidesOperation.start();
         inputOperation.start();
@@ -116,13 +113,14 @@ public class TeleopNew extends functions {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-           // telemetry.addData("left front", robot.driveLeftFront.getCurrentPosition());
+            robot.updatePosition();
+            // telemetry.addData("left front", robot.driveLeftFront.getCurrentPosition());
            // telemetry.addData("left back", robot.driveLeftBack.getCurrentPosition());
            // telemetry.addData("right front", robot.driveRightFront.getCurrentPosition());
            // telemetry.addData("right back", robot.driveRightBack.getCurrentPosition());
-           // telemetry.addData("vertical", robot.verticalElevator.getCurrentPosition());
-//            telemetry.addData("x", robot.rightCollector.getCurrentPosition());
-//            telemetry.addData("y", robot.leftCollector.getCurrentPosition());
+            telemetry.addData("vertical", robot.verticalElevator.getCurrentPosition());
+            telemetry.addData("x", robot.robotPosition.x);
+            telemetry.addData("y", robot.robotPosition.y);
             telemetry.addData("dist",robot.sensorDistance.getDistance(DistanceUnit.CM));
             telemetry.addData("stone level", currentLevel);
             telemetry.addData("elevator height", elevatorHeight);
@@ -130,9 +128,10 @@ public class TeleopNew extends functions {
             telemetry.addData("robot angle target", robotAngle);
             telemetry.addData("robot real angle", robot.GetGyroAngle());
             telemetry.addData("robot error angle", errorKeap);
+            telemetry.addData("robot x", robot.robotPosition.x);
+            telemetry.addData("robot y", robot.robotPosition.y);
             telemetry.update();
             driveOperation();
-
         }
     }
 
@@ -147,33 +146,32 @@ public class TeleopNew extends functions {
             try {
                 while (!isInterrupted() && opModeIsActive()) {
                     while (!isInterrupted() && opModeIsActive()) {
-
-
                         boolean emerrgency = false;
 
                         double backPosition;
                         double frontPosition;
-                        if (gamepad2.left_trigger > 0.1) {
-                            frontPosition = frontOpenPos;
-                        } else {
-                            frontPosition = frontClosePos;
-                        }
+                        if (!gamepad2.y) {
+                            if (gamepad2.left_trigger > 0.1) {
+                                frontPosition = frontOpenPos;
+                            } else {
+                                frontPosition = frontClosePos;
+                            }
 
-                        if (gamepad2.right_trigger > 0.1) {
-                            //telemetry.addData("ga", gamepad2.right_trigger);
-                            backPosition = backOpenPos;
-                        } else {
-                            backPosition = backClosePos;
-                        }
-                        if(gamepad1.left_trigger > 0.1){
-                            frontPosition = frontOpenPos;
-                        }
-                        if(gamepad2.b){
-                            fail = true;
-                        }else if(gamepad2.x){
-                            fail = false;
+                            if (gamepad2.right_trigger > 0.1) {
+                                //telemetry.addData("ga", gamepad2.right_trigger);
+                                backPosition = backOpenPos;
+                            } else {
+                                backPosition = backClosePos;
+                            }
+                            if (gamepad1.left_trigger > 0.1) {
+                                frontPosition = frontOpenPos;
+                            }
+                            if (gamepad2.b) {
+                                fail = true;
+                            } else if (gamepad2.x) {
+                                fail = false;
 
-                        }
+                            }
 
                             if (robot.sensorDistance.getDistance(DistanceUnit.CM) < 6) {
                                 frontPosition = frontClosePos;
@@ -181,10 +179,15 @@ public class TeleopNew extends functions {
 
                             }
 
-                        if(fail) {
-                            frontPosition = frontClosePos;
-                            backPosition = backClosePos;
+                            if (fail) {
+                                frontPosition = frontClosePos;
+                                backPosition = backClosePos;
+                            }
+                        } else {
+                            frontPosition = frontOpenPos;
+                            backPosition = backOpenPos;
                         }
+
 
                         robot.frontClaw.setPosition(frontPosition);
                         robot.backClaw.setPosition(backPosition);
@@ -204,62 +207,44 @@ public class TeleopNew extends functions {
         slidesOperation() {
             this.setName("slidesOperation");
         }
-
         @Override
         public void run() {
             try {
                 boolean motorOnTarget = true;
                 robot.verticalElevator.setTargetPosition(0);
                 while (!isInterrupted() && opModeIsActive()) {
-                   robot.horizontalElevator.setPower(gamepad2.right_stick_x);
-                   if(abs(gamepad2.left_stick_y) > 0.2){
 
-                       robot.verticalElevator.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                       robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                       robot.verticalElevator.setPower(-gamepad2.left_stick_y);
-                   }else {
+                    robot.verticalElevator.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                    robot.verticalElevator.setPower(-gamepad2.left_stick_y);
+                    robot.horizontalElevator.setPower(gamepad2.right_stick_x);
+                        elevatorHeight = robot.verticalElevator.getCurrentPosition() / COUNTS_PER_INCH_FOR_VERTICAL_SLIDE;
+                        if (gamepad2.left_bumper) {
+                            if (currentLevel < 5) {
+                                currentLevel = currentLevel + 1;
+                            }
+                            while (gamepad2.left_bumper && opModeIsActive()) {
+                                Thread.sleep(threadSleepTimeOut);
+                            }
+                        }
+                        if (gamepad2.right_bumper) {
 
-                       elevatorHeight = robot.verticalElevator.getCurrentPosition() / COUNTS_PER_INCH_FOR_VERTICAL_SLIDE;
-                       if (gamepad2.left_bumper) {
-                           if (currentLevel < 6) {
-                               currentLevel = currentLevel + 1;
-                           }
-                           while (gamepad2.left_bumper && opModeIsActive()) {
-                               Thread.sleep(threadSleepTimeOut);
-                           }
-                       }
-                       if (gamepad2.right_bumper) {
+                            if (currentLevel > 0) {
+                                currentLevel = currentLevel - 1;
+                            }
+                            while (gamepad2.left_bumper && opModeIsActive()) {
+                                Thread.sleep(threadSleepTimeOut);
+                            }
 
-                           if (currentLevel > 0) {
-                               currentLevel = currentLevel - 1;
-                           }
-                           while (gamepad2.left_bumper && opModeIsActive()) {
-                               Thread.sleep(threadSleepTimeOut);
-                           }
+                        }
 
-                       }
+                        robot.AutoVerticalSlide(currentLevel, gamepad2.a);
+                    }
 
-                       if (gamepad2.left_stick_button) {
-                           motorOnTarget = false;
-                           robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                           robot.verticalElevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                           robot.verticalElevator.setTargetPosition((int) COUNTS_PER_INCH_FOR_VERTICAL_SLIDE * levels[currentLevel]);
-                           robot.verticalElevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                       }
-                       if (robot.verticalElevator.isBusy() && !motorOnTarget) {
-                           robot.verticalElevator.setPower(0.9);
-                       } else {
-                           motorOnTarget = true;
-                           robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                           robot.verticalElevator.setPower(0);
-                       }
-                   }
 //                   }else if (robot.verticalElevator.getCurrentPosition() > robot.verticalElevator.getTargetPosition() && opModeIsActive()){
 //                       robot.verticalElevator.setPower(-verticalSpeed);
 //                   }
                     Thread.sleep(threadSleepTimeOut);
-
-                }
             } catch (InterruptedException ignored) {
             }
         }
@@ -280,17 +265,21 @@ public class TeleopNew extends functions {
         }else{//put in mahberet
             driftSpeed = 0.5;//put in mahberet
         }//put in mahberet
+        if(gamepad1.left_stick_y > 0.1 || gamepad1.left_stick_x > 0.1){
+            turnPower /= 0.55;
+        }
         if(inRange(angle,20,70) || inRange(angle,200,250) ){//put in mahberet
-            robot.driveLeftFront.setPower(right_y - turnPower);//put in mahberet
-            robot.driveRightBack.setPower(right_y + turnPower);//put in mahberet
-            robot.driveLeftBack.setPower(right_y - turnPower);//put in mahberet
-            robot.driveRightFront.setPower(right_y + turnPower);//put in mahberet
+                robot.driveLeftFront.setPower(right_y - turnPower);//put in mahberet
+                robot.driveRightBack.setPower(right_y + turnPower);//put in mahberet
+                robot.driveLeftBack.setPower(right_y - turnPower);//put in mahberet
+                robot.driveRightFront.setPower(right_y + turnPower);//put in mahberet
         }else{//put in mahberet
-            robot.driveLeftFront.setPower(-right_x* driftSpeed - turnPower);//put in mahberet
-            robot.driveRightBack.setPower(-right_x* driftSpeed + turnPower);//put in mahberet
-            robot.driveLeftBack.setPower(right_x* driftSpeed - turnPower);//put in mahberet
-            robot.driveRightFront.setPower(right_x* driftSpeed + turnPower);//put in mahberet
+                robot.driveLeftFront.setPower(-right_x * driftSpeed - turnPower);//put in mahberet
+                robot.driveRightBack.setPower(-right_x * driftSpeed + turnPower);//put in mahberet
+                robot.driveLeftBack.setPower(right_x * driftSpeed - turnPower);//put in mahberet
+                robot.driveRightFront.setPower(right_x * driftSpeed + turnPower);//put in mahberet
         }//put in mahberet
+
 
 
     }//put in mahberet
@@ -306,7 +295,6 @@ public class TeleopNew extends functions {
         public void run() {
             try {
                 while (!isInterrupted() && opModeIsActive()) {
-
                     if (gamepad1.left_bumper) {
                         robot.reverse();
                         while (gamepad1.left_bumper && opModeIsActive()){
@@ -357,72 +345,6 @@ public class TeleopNew extends functions {
         }
     }
 
-
-    private class stoneLevel extends Thread {
-        stoneLevel() {
-            this.setName("stoneLevel");
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (!isInterrupted() && opModeIsActive()) {
-                    if (gamepad2.left_bumper) {
-                        if (currentLevel < 7) {
-                            currentLevel = currentLevel + 1;
-                            telemetry.addData("", "current level +");
-                        }
-                        while (gamepad2.left_bumper && opModeIsActive()) {
-                            Thread.sleep(threadSleepTimeOut);
-                        }
-                    }
-                    if (gamepad2.right_bumper) {
-                        if (currentLevel > 0) {
-                            currentLevel = currentLevel - 1;
-                            telemetry.addData("", "current level -");
-                        }
-                        while (gamepad2.left_bumper && opModeIsActive()) {
-                            Thread.sleep(threadSleepTimeOut);
-                        }
-
-                    }
-                    if (gamepad2.left_trigger > 0.6) {
-                        robot.verticalElevator.setTargetPosition((int) countsPer20gearmotor * 5 * currentLevel);
-                    }
-                    Thread.sleep(threadSleepTimeOut);
-                }
-            } catch (InterruptedException ignored) {
-
-            }
-        }
-    }
-
-    private class elevatorControl extends Thread {
-        elevatorControl() {
-            this.setName("elevatorControl");
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (!isInterrupted() && opModeIsActive()) {
-                    double verticalRatio = gamepad2.left_stick_y;
-                    double verticalPosition = abs(verticalRatio) * maxElevatorValue;
-
-                    robot.verticalElevator.setTargetPosition((int) verticalPosition);
-//                robot.verticalElevator.gotoPosition(0.6);
-
-                    double horizontalPower = gamepad2.right_stick_x;
-                    //robot.horizontalElevator.setPower(horizontalPower);
-
-                    Thread.sleep(threadSleepTimeOut);
-                }
-            } catch (InterruptedException ignored) {
-
-            }
-        }
-    }
-
     private class catchers extends Thread {
         int position = 0;
 
@@ -433,7 +355,7 @@ public class TeleopNew extends functions {
             try {
                 while (opModeIsActive() && !isInterrupted()) {
                     if (gamepad1.y) {
-                        position = position == 1 ? 0 : 1;
+                        position = (position == 1) ? 0 : 1;
                         while (gamepad1.y && opModeIsActive()) {
                             Thread.sleep(threadSleepTimeOut);
                         }

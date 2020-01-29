@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
@@ -44,7 +46,7 @@ import java.util.List;
  * for a certain color (blue) and find contours of objects of that color, which is very common in
  * robotics OpenCV applications.
  */
-
+@Disabled
 public class MineralVision  {
     private boolean showContours = true;
     GripGoldMineral     gripGold;

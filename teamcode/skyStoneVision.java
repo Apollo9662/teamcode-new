@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Log;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -16,6 +18,8 @@ import org.opencv.core.Rect;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static org.firstinspires.ftc.teamcode.skyStoneVision.stonePosition.*;
 
 /**
  * Created by guinea on 10/5/17.
@@ -49,12 +53,13 @@ import java.util.List;
  * for a certain color (blue) and find contours of objects of that color, which is very common in
  * robotics OpenCV applications.
  */
-
+@Disabled
 public class skyStoneVision  {
     private boolean showContours = true;
     GripSkyStone skyStone;
     private Mat imageRGB;
     private Mat hsv;
+    public int red = 0;
     private Mat thresholded;
     private MatOfKeyPoint detectedTargets;
     private Rect targetRect = null;
@@ -62,7 +67,13 @@ public class skyStoneVision  {
     private boolean findGoldMineral = false;
     private boolean contoursOutputIsReady = false;
     private List<MatOfPoint> contoursGold = new ArrayList<>();
-
+    Point stone = new Point(0,0);
+    stonePosition position = left;
+    enum stonePosition{
+        center,
+        left,
+        right
+    }
 
     // this is just here so we can expose it later thru getContours.
 
@@ -110,19 +121,18 @@ public class skyStoneVision  {
 //        contoursGold = gripGold.filterContoursOutput();
         skyStone.filterContoursOutput(contoursGold);
         contoursOutputIsReady = true;
-        if ((!(skyStone.findBlobsOutput().isEmpty())) && (showContours)) {
-            Log.d("blob", String.valueOf(skyStone.findBlobsOutput().get(0)));
+        if ((!(skyStone.blobs.isEmpty())) && (showContours)) {
+            stone.y =  skyStone.findBlobsOutput().get(0).y;
+            stone.x =  skyStone.findBlobsOutput().get(0).x;
+            if(stone.x < 230 + red){
+                position = right;
+            }else{
+                position = center;
+            }
             Imgproc.drawContours(imageRGB, contoursGold, -1,  new Scalar(0, 250, 200), 4, 8);
-            try {
-                for(Blob b : skyStone.blobs) {
-                    MatOfPoint m = new MatOfPoint();
-                    m.fromList(b.verPath);
-                    Imgproc.drawContours(imageRGB, Collections.singletonList(m), -1, new Scalar(Math.random() * 255, Math.random() * 255,Math.random() * 255), 8, 8);
-                }
-            }catch (Exception e){}
+            Log.d("s", String.valueOf(stone.x));
+            Imgproc.drawMarker(imageRGB,stone,new Scalar(255, 50,10),Imgproc.MARKER_CROSS,50,10);
             findGoldMineral = true;
-        } else {
-            findGoldMineral = false;
         }
 
         return imageRGB; // display the image seen by the camera

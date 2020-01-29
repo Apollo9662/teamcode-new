@@ -2,12 +2,13 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Log;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.Range;
 
 import static java.lang.Math.abs;
-
+@Disabled
 public class GyroOperator extends LinearOpMode {
     static final double HEADING_THRESHOLD = 5;      // As tight as e can make it with an integer gyro
     static final double P_DRIVE_COEFF = 0.01;     // Larger is more responsive, but also less stable
@@ -96,17 +97,25 @@ public class GyroOperator extends LinearOpMode {
         while (robotError <= -180) robotError += 360;
         return robotError;
     }
+    public void gyroTurn (  double speed, double angle) {
 
+        // keep looping while we are still active, and not on heading.
+        while (opModeIsActive() && !onHeading(speed, angle, P_TURN_COEFF)) {
+            // Update telemetry & Allow time for other processes to run.
+            telemetry.update();
+        }
+    }
     public void pidTurn(double speed,double angle){
         PIDController pid = new PIDController(0.02,0,0);
         pid.setSetpoint(angle);
-        pid.setOutputRange(0, speed);
+        pid.setOutputRange(-speed, speed);
         pid.setInputRange(-180, 180);
         pid.enable();
         double power;
         double error = angle - robot.GetGyroAngle();
         while(abs(error) > 2){
             power = pid.performPID(robot.GetGyroAngle());
+            power *= error/abs(error);
             robot.setDriveMotorsPower(-power, Hardware.DRIVE_MOTOR_TYPES.LEFT);
             robot.setDriveMotorsPower(power, Hardware.DRIVE_MOTOR_TYPES.RIGHT);
             error = angle - robot.GetGyroAngle();
@@ -204,31 +213,30 @@ public class GyroOperator extends LinearOpMode {
                 steer = pidDrive.performPID(robot.GetGyroAngle());
                 leftSpeed = pidDriveEncoder[0].performPID(robot.driveLeftBack.getCurrentPosition());
                 rightSpeed = pidDriveEncoder[1].performPID(robot.driveRightBack.getCurrentPosition());
-                leftSpeed  -= steer;
-                rightSpeed += steer;
+
                 Log.d("YAIR","6");
 
 
                 switch (mode) {
                     case left:
-                        robot.driveLeftFront.setPower(-rightSpeed);
-                        robot.driveLeftBack.setPower(leftSpeed);
+                        robot.driveLeftFront.setPower(-rightSpeed - steer);
+                        robot.driveLeftBack.setPower(leftSpeed - steer);
 
-                        robot.driveRightFront.setPower(rightSpeed);
-                        robot.driveRightBack.setPower(-leftSpeed);
+                        robot.driveRightFront.setPower(rightSpeed + steer);
+                        robot.driveRightBack.setPower(-leftSpeed + steer);
                         telemetry.addData("mode",mode);
                         break;
                     case right:
-                        robot.driveLeftFront.setPower(leftSpeed);
-                        robot.driveLeftBack.setPower(-rightSpeed);
+                        robot.driveLeftFront.setPower(leftSpeed - steer);
+                        robot.driveLeftBack.setPower(-rightSpeed - steer);
 
-                        robot.driveRightFront.setPower(-leftSpeed);
-                        robot.driveRightBack.setPower(rightSpeed);
+                        robot.driveRightFront.setPower(-leftSpeed + steer);
+                        robot.driveRightBack.setPower(rightSpeed + steer);
                         break;
 
                     default:
-                        this.robot.setDriveMotorsPower(leftSpeed, Hardware.DRIVE_MOTOR_TYPES.LEFT);
-                        this.robot.setDriveMotorsPower(rightSpeed, Hardware.DRIVE_MOTOR_TYPES.RIGHT);
+                        this.robot.setDriveMotorsPower(leftSpeed - steer, Hardware.DRIVE_MOTOR_TYPES.LEFT);
+                        this.robot.setDriveMotorsPower(rightSpeed + steer, Hardware.DRIVE_MOTOR_TYPES.RIGHT);
                         break;
 
                 }

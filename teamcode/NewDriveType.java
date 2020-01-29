@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name = "Turn mid Drive")   // tipshim
+@TeleOp(name = "Turn mid Drive")
+@Disabled
 public class NewDriveType extends functions {
     Hardware robot = new Hardware();
     static final double     P_DRIVE_COEFF           = 0.15;     // Larger is more responsive, but also less stable
