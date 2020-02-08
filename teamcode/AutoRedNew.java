@@ -27,8 +27,7 @@ public  class AutoRedNew extends autonum{
     private InternalCameraExample openCV  = new InternalCameraExample();
     public void runOpMode(){
         robot.init(hardwareMap, false);
-
-        telemetry.addData("state ==> ", "Start");
+        telemetry.addData("imu is working ==> ", robot.imuIsWorking);
 
         telemetry.update();
 
@@ -36,6 +35,9 @@ public  class AutoRedNew extends autonum{
 
         openCV.proces(110);
         waitForStart();
+        if(!robot.imuIsWorking){
+            while (opModeIsActive()){}
+        }
         runtime.reset();
         timer.start();
         vu =  openCV.vision.position;

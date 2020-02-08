@@ -28,7 +28,7 @@ public  class AutoBlueNew extends autonum{
     public void runOpMode(){
         robot.init(hardwareMap, false);
 
-        telemetry.addData("state ==> ", "Start");
+        telemetry.addData("imu is working ==> ", robot.imuIsWorking);
 
         telemetry.update();
 
@@ -36,6 +36,10 @@ public  class AutoBlueNew extends autonum{
 
         openCV.proces(0);
         waitForStart();
+
+        if(!robot.imuIsWorking){
+            while (opModeIsActive()){}
+        }
         runtime.reset();
         timer.start();
         vu =  openCV.vision.position;
@@ -63,7 +67,7 @@ public  class AutoBlueNew extends autonum{
         }
 
         gyroTurn(0.25,-85);
-        pidDrive(0.4,-20,-83,normal);
+        pidDrive(0.4,-20,-90,normal);
         robot.setCatchers(0);
         sleep(800);
         outPutCube.start();

@@ -106,7 +106,6 @@ public class RobotMovement extends LinearOpMode {
         robot.driveRightBack.setPower(x - steer);
         robot.driveLeftBack.setPower(y + steer);
         robot.driveLeftFront.setPower(x + steer);
-
     }
 
 
@@ -172,7 +171,7 @@ public class RobotMovement extends LinearOpMode {
     public double getError(double targetAngle) {
         double robotError;
         // calculate error in -179 to +180 range  (
-        robotError = targetAngle - robot.GetGyroAngle();
+        robotError = targetAngle - (robot.GetGyroAngle());
         while (robotError > 180)  robotError -= 360;
         while (robotError <= -180) robotError += 360;
         return robotError;

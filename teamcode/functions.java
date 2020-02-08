@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 @Disabled
 public abstract class functions extends RobotMovement {
-    Hardware robot = new Hardware();
     double distanceToTarget;
     double encoder = 0;
     double distance = 0;
@@ -14,9 +13,9 @@ public abstract class functions extends RobotMovement {
     }
 
     public void driveToPosition(double targetX, double targetY){
-        distanceToTarget = Math.sqrt(Math.pow(targetX - robot.point().x,2) + Math.pow(targetY - robot.point().y,2));
+        distanceToTarget = Math.hypot(targetX - robot.point().x, targetY - robot.point().y);
         while(distanceToTarget > 20 && opModeIsActive()){
-            distanceToTarget = Math.sqrt(Math.pow(targetX - robot.point().x,2) + Math.pow(targetY - robot.point().y,2));
+            distanceToTarget = Math.hypot(targetX - robot.point().x, targetY - robot.point().y);
             robot.setDriveMotorsPower(0.2, Hardware.DRIVE_MOTOR_TYPES.ALL);
             distance = robot.driveRightBack.getCurrentPosition() - encoder;
             robot.point().x += distance*Math.cos(Math.toRadians(robot.GetGyroAngle()));

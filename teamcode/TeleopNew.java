@@ -56,10 +56,9 @@ import static org.firstinspires.ftc.teamcode.MathFunctions.*;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="TeleopNe", group="APOLLO")
+@TeleOp(name="TeleopN", group="APOLLO")
 public class TeleopNew extends functions {
 
-    Hardware robot = new Hardware();
     private Thread slidesOperation = new slidesOperation();
     private Thread clawOperation = new clawOperation();
     private Thread catchers = new catchers();
@@ -69,7 +68,8 @@ public class TeleopNew extends functions {
     boolean verticalMotorOnTarget = true;
     double turnPower = 0;
     double errorKeap;
-    private double robotAngle = 0;
+    double robotAngle = 0;
+    boolean CAPSTONE = false;
 
 
     private static final double countsPer20gearmotor = 1120;    // eg: TETRIX Motor Encoder
@@ -86,9 +86,8 @@ public class TeleopNew extends functions {
 
     private int currentLevel = 0;
     private double elevatorHeight = 0;
-    private double driftSpeed = 0.5;
+    private double driftSpeed = 0.4;
     private boolean fail = false;
-    private boolean correctTurn =false;
 
     public void runOpMode() {
 
@@ -98,7 +97,8 @@ public class TeleopNew extends functions {
          */
         robot.init(hardwareMap, true);
         // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver");    //
+        telemetry.addData("imu is working ==> ", robot.imuIsWorking);
+        telemetry.addData("imu angle ==> ", robot.GetGyroAngle());
         telemetry.update();
 
         waitForStart();
@@ -106,27 +106,23 @@ public class TeleopNew extends functions {
         slidesOperation.start();
         inputOperation.start();
         catchers.start();
-      //return after scrimage misgev
-      //  stoneLevel.start();
-
 
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            robot.updatePosition();
-            // telemetry.addData("left front", robot.driveLeftFront.getCurrentPosition());
-           // telemetry.addData("left back", robot.driveLeftBack.getCurrentPosition());
-           // telemetry.addData("right front", robot.driveRightFront.getCurrentPosition());
-           // telemetry.addData("right back", robot.driveRightBack.getCurrentPosition());
-            telemetry.addData("vertical", robot.verticalElevator.getCurrentPosition());
-            telemetry.addData("x", robot.robotPosition.x);
-            telemetry.addData("y", robot.robotPosition.y);
+            try {
+                robot.updatePosition(true);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            telemetry.addData("vertical", robot.finalAngle);
+            telemetry.addData("x", robot.leftCollector.getCurrentPosition());
+            telemetry.addData("y", robot.rightCollector.getCurrentPosition());
             telemetry.addData("dist",robot.sensorDistance.getDistance(DistanceUnit.CM));
             telemetry.addData("stone level", currentLevel);
             telemetry.addData("elevator height", elevatorHeight);
             telemetry.addData("turn speed", turnPower);
-            telemetry.addData("robot angle target", robotAngle);
-            telemetry.addData("robot real angle", robot.GetGyroAngle());
+            telemetry.addData("robot real angle", robotAngle);
             telemetry.addData("robot error angle", errorKeap);
             telemetry.addData("robot x", robot.robotPosition.x);
             telemetry.addData("robot y", robot.robotPosition.y);
@@ -146,11 +142,10 @@ public class TeleopNew extends functions {
             try {
                 while (!isInterrupted() && opModeIsActive()) {
                     while (!isInterrupted() && opModeIsActive()) {
-                        boolean emerrgency = false;
 
                         double backPosition;
                         double frontPosition;
-                        if (!gamepad2.y) {
+                        if (!CAPSTONE) {
                             if (gamepad2.left_trigger > 0.1) {
                                 frontPosition = frontOpenPos;
                             } else {
@@ -193,9 +188,17 @@ public class TeleopNew extends functions {
                         robot.backClaw.setPosition(backPosition);
 
                         Thread.sleep(threadSleepTimeOut);
-                    }
-                    Thread.sleep(threadSleepTimeOut);
+                        if (gamepad2.y) {
+                            if (CAPSTONE) {
+                                robot.capStone.setPosition(0);
+                                CAPSTONE = false;
+                            } else {
+                                robot.capStone.setPosition(0.2);
+                                CAPSTONE = true;
+                            }
 
+                        }
+                    }
                 }
             } catch (InterruptedException ignored) {
             }
@@ -215,7 +218,7 @@ public class TeleopNew extends functions {
                 while (!isInterrupted() && opModeIsActive()) {
 
                     robot.verticalElevator.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//                    robot.verticalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
                     robot.verticalElevator.setPower(-gamepad2.left_stick_y);
                     robot.horizontalElevator.setPower(gamepad2.right_stick_x);
                         elevatorHeight = robot.verticalElevator.getCurrentPosition() / COUNTS_PER_INCH_FOR_VERTICAL_SLIDE;
@@ -252,37 +255,40 @@ public class TeleopNew extends functions {
 
 
     public void driveOperation() {
-        turnPower = -gamepad1.right_stick_x * 0.55;   //put in mahberet
-        double right_x = gamepad1.left_stick_x;//put in mahberet
-        double right_y = gamepad1.left_stick_y;//put in mahberet
+        turnPower = -gamepad1.right_stick_x * 0.5;
+        double right_x = -gamepad1.left_stick_x;
+        double right_y = gamepad1.left_stick_y;
 
-        double angle = Math.toDegrees(Math.atan2(right_y, right_x));//put in mahberet
-        angle += 135;//put in mahberet
-        right_y = -right_y;//put in mahberet
-        telemetry.addData("angle = ",angle);//put in mahberet
-        if(gamepad1.a){//put in mahberet
-            driftSpeed = 0.8;//put in mahberet
-        }else{//put in mahberet
-            driftSpeed = 0.5;//put in mahberet
-        }//put in mahberet
-        if(gamepad1.left_stick_y > 0.1 || gamepad1.left_stick_x > 0.1){
-            turnPower /= 0.55;
+        double angle = Math.toDegrees(Math.atan2(right_y, right_x));
+        angle += 135;
+        right_y = -right_y;
+        telemetry.addData("angle = ",angle);
+        if(abs(right_x)>0.1 && abs(right_y)>0.1){
+            turnPower = -gamepad1.right_stick_x;
         }
-        if(inRange(angle,20,70) || inRange(angle,200,250) ){//put in mahberet
-                robot.driveLeftFront.setPower(right_y - turnPower);//put in mahberet
-                robot.driveRightBack.setPower(right_y + turnPower);//put in mahberet
-                robot.driveLeftBack.setPower(right_y - turnPower);//put in mahberet
-                robot.driveRightFront.setPower(right_y + turnPower);//put in mahberet
-        }else{//put in mahberet
-                robot.driveLeftFront.setPower(-right_x * driftSpeed - turnPower);//put in mahberet
-                robot.driveRightBack.setPower(-right_x * driftSpeed + turnPower);//put in mahberet
-                robot.driveLeftBack.setPower(right_x * driftSpeed - turnPower);//put in mahberet
-                robot.driveRightFront.setPower(right_x * driftSpeed + turnPower);//put in mahberet
-        }//put in mahberet
+        if(!inRange(angle,20,70) && !inRange(angle,200,250) ){
+            if (abs(turnPower) < 0.03 && abs(right_x)>0.05 && abs(right_y)>0.05) {
+                double DriveError = getError(robotAngle);
+                turnPower = getSteer(DriveError, 0.01);
+            } else {
+                robotAngle = robot.GetGyroAngle();
+            }
+            robot.driveLeftFront.setPower(-right_x * driftSpeed - turnPower);
+            robot.driveRightBack.setPower(-right_x * driftSpeed + turnPower);
+            robot.driveLeftBack.setPower(right_x * driftSpeed - turnPower);
+            robot.driveRightFront.setPower(right_x * driftSpeed + turnPower);
+        }else{
+
+            robot.driveLeftFront.setPower(right_y - turnPower);
+            robot.driveRightBack.setPower(right_y + turnPower);
+            robot.driveLeftBack.setPower(right_y - turnPower);
+            robot.driveRightFront.setPower(right_y + turnPower);
+
+        }
 
 
 
-    }//put in mahberet
+    }
 
     private class reverseDrive extends Thread {
         reverseDrive() {

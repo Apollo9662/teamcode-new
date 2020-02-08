@@ -21,6 +21,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import static java.lang.Math.abs;
+import static java.lang.Thread.sleep;
 import static org.firstinspires.ftc.teamcode.MathFunctions.AngleWrap;
 import static org.firstinspires.ftc.teamcode.MathFunctions.between;
 import static org.firstinspires.ftc.teamcode.MathFunctions.calculateAngle;
@@ -28,8 +30,6 @@ import static org.firstinspires.ftc.teamcode.MathFunctions.moveX;
 import static org.firstinspires.ftc.teamcode.MathFunctions.moveY;
 @Disabled
 public class Hardware {
-    private Point position = new Point(0,0);
-
     DcMotorEx driveLeftBack = null;
     DcMotorEx driveRightBack = null;
     DcMotorEx driveLeftFront = null;
@@ -41,9 +41,10 @@ public class Hardware {
     Servo frontClaw = null;
     Servo backClaw = null;
 
+    Servo capStone = null;
     private Servo rightCatcher = null;
     private Servo leftCatcher = null;
-
+    double finalAngle;
 
     DcMotorEx verticalElevator = null;
     DcMotor horizontalElevator = null;
@@ -56,16 +57,17 @@ public class Hardware {
 
 
     public static double frontClosePos = 1;
-    public static double frontOpenPos = 0.07;
+    public static double frontOpenPos =  0.25;
 
-    public static double backClosePos =0.2;
-    public static double  backOpenPos = 0.9;
+    public static double backClosePos =0;
+    public static double  backOpenPos = 0.8;
 
     private static final double countsPer20gearmotor = 1120;
     static final double DRIVE_GEAR_REDUCTION = 2.4;
     private static final double COUNTS_PER_INCH_FOR_VERTICAL_SLIDE = (countsPer20gearmotor / DRIVE_GEAR_REDUCTION) / (Math.PI);
     private int[] levels = {0,6,10,15,18,23};
     boolean verticalMotorOnTarget = true;
+    boolean imuIsWorking = false;
 
     Point previousEncoderPosition = new Point();
     Point move = new Point();
@@ -81,7 +83,7 @@ public class Hardware {
 
 
     Point point() {
-        return position;
+        return robotPosition;
     }
 
     void reverse() {
@@ -115,15 +117,12 @@ public class Hardware {
 
     /* Initialize standard Hardware interfaces */
     void init(HardwareMap ahwMap,boolean teleop) {
-        
-        boolean sucses;
-        int counter = 0;
         /* local OpMode members. */
         imu = ahwMap.get(BNO055IMU.class, "imu ");
-        if (initImu()){}
-        else {
+        imuIsWorking = initImu();
+        if (!imuIsWorking){
             imu = ahwMap.get(BNO055IMU.class , " imu 1");
-            initImu();
+            imuIsWorking = initImu();
         }
 
         sensorColor =ahwMap.get(ColorSensor.class, "scd");
@@ -151,8 +150,10 @@ public class Hardware {
         rightCatcher = ahwMap.get(Servo.class, "rca");
         leftCatcher = ahwMap.get(Servo.class, "lca");
 
-        frontClaw = ahwMap.get(Servo.class,"os");
-        backClaw = ahwMap.get(Servo.class,"os2" );
+        capStone = ahwMap.get(Servo.class , "ca");
+
+        frontClaw = ahwMap.get(Servo.class,"fc");
+        backClaw = ahwMap.get(Servo.class,"bc" );
 
 
         driveRightBack.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -191,12 +192,10 @@ public class Hardware {
 
         horizontalElevator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        driveRightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        driveRightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        driveLeftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        driveLeftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
         initEncoderPosition = new Point(0, 0);
+        previousEncoderPosition = initEncoderPosition;
+        capStone.setPosition(0);
+
     }
 
 
@@ -243,7 +242,7 @@ public class Hardware {
              //  driveLeftFront.setVelocity(power);
              //  driveLeftBack.setVelocity(power);
              //  driveRightFront.setVelocity(power);
-               driveRightBack.setVelocity(power);
+//               driveRightBack.setVelocity(power);
 
                 driveLeftFront.setPower(power);
                 driveLeftBack.setPower(power);
@@ -260,7 +259,7 @@ public class Hardware {
 
     void setCatchers(double position){
         if(position == 1){
-            rightCatcher.setPosition(0.7);
+            rightCatcher.setPosition(0.75);
             leftCatcher.setPosition(0.7);
         }else{
             rightCatcher.setPosition(0);
@@ -269,11 +268,11 @@ public class Hardware {
 
     }
     public double getX(){
-        return position.x;
+        return point().x;
     }
     public double getY()
     {
-        return position.y;
+        return point().y;
     }
     public boolean initImu(){
         boolean sucses;
@@ -300,29 +299,29 @@ public class Hardware {
         return rightCollector.getCurrentPosition() / s4tToIn;
     }
 
-    public void updatePosition(){
-        currentEncoderPosition = new Point(getX(), getY());
-
-        move = new Point(currentEncoderPosition.x - previousEncoderPosition.x, currentEncoderPosition.y  - previousEncoderPosition.y);
-
-        double finalAngle = Math.toDegrees(Math.toRadians(GetGyroAngle()) + calculateAngle(move.y, move.x)) - 90;
-        finalAngle = AngleWrap(Math.toRadians(finalAngle));
+    public void updatePosition(boolean blue) throws InterruptedException {
 
 
+        currentEncoderPosition = new Point(getXEncoder(), getYEncoder());
+
+        move.x = currentEncoderPosition.x - previousEncoderPosition.x;
+        move.y = currentEncoderPosition.y -previousEncoderPosition.y;
+
+        finalAngle = (Math.toRadians(GetGyroAngle()) + calculateAngle(move.y, move.x));
+        finalAngle = AngleWrap(finalAngle);
+
+        move.y *= -1;
         double hypotenuse = Math.hypot(move.x, move.y);
+        if(blue){
+            robotPosition.x -= (moveX(finalAngle, hypotenuse) + initEncoderPosition.x);
+        }
+        else{
+            robotPosition.x += (moveX(finalAngle, hypotenuse) + initEncoderPosition.x);
+        }
 
-        move.x = moveX(hypotenuse, finalAngle);
-        move.y = moveY(hypotenuse, finalAngle);
-
-        robotPosition.x = (move.x + initEncoderPosition.x);
-        robotPosition.y = (move.y + initEncoderPosition.y);
-
-        robotPosition.x = between(robotPosition.x, 0, 144);
-        robotPosition.y = between(robotPosition.y, 0, 144);
-
-        previousEncoderPosition.x = currentEncoderPosition.x;
-        previousEncoderPosition.y = currentEncoderPosition.y;
-
+        robotPosition.y +=(moveY(finalAngle, hypotenuse) + initEncoderPosition.y);
+        sleep(50);
+        previousEncoderPosition = currentEncoderPosition;
     }
 
     public void AutoVerticalSlide(int level, boolean setTarget){

@@ -153,40 +153,31 @@ public class MathFunctions {
 
     public static double calculateAngle(double opposite, double adjacent){
         double radians = Math.atan(opposite/adjacent);
-        if (adjacent < 0){
+        if (adjacent > 0){
             return radians;
         }else {
             return Math.toRadians(Math.toDegrees(radians) + 180);
         }
     }
 
-    public static double moveX(double hypotenuse, double angle) {
-        double advanceX;
+    public static double moveX(double angle, double hypotenuse){
+        double adjacent;
         if (hypotenuse == 0) {
-            hypotenuseX = 0;
-            advanceX = 0;
+            adjacent = 0;
         } else {
-            hypotenuseX += hypotenuse * Math.cos(angle);
-
-            advanceX = hypotenuseX;
-
-            hypotenuseX = hypotenuseX - advanceX;
+            adjacent = hypotenuse * Math.cos(angle - Math.toRadians(90));
         }
-        return advanceX;
+        return adjacent;
     }
-    public static double moveY(double hypotenuse, double angle) {
-        double advanceY;
+
+    public static double moveY(double angle, double hypotenuse){
+        double opposite;
         if (hypotenuse == 0) {
-            hypotenuseY = 0;
-            advanceY = 0;
+            opposite = 0;
         } else {
-            hypotenuseY += hypotenuse * Math.sin(angle);
-
-            advanceY = hypotenuseY;
-
-            hypotenuseY = hypotenuseY - advanceY;
+            opposite = hypotenuse * Math.sin(angle + Math.toRadians(90));
         }
-        return advanceY;
+        return opposite;
     }
 
     public static double between(double value, double min, double max){
